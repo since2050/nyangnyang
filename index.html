@@ -188,8 +188,8 @@
 
       <div class="field-row" style="margin-top:10px;">
         <div style="flex:1;">
-          <div class="field-label">분할 간격 (%)</div>
-          <input id="intervalPct" type="number" step="0.01" inputmode="decimal" placeholder="예: 0.5" />
+          <div class="field-label">분할 간격 (USDT)</div>
+<input id="intervalPct" type="number" step="0.01" inputmode="decimal" placeholder="예: 150" />
         </div>
         <div style="flex:1;">
           <div class="field-label">손절 (%)</div>
@@ -265,11 +265,14 @@
         return;
       }
 
+      // 분할 간격을 퍼센트가 아니라 "가격(USDT) 간격"으로 사용
       function buyPrice(n) {
         if (side === "long") {
-          return entry * (1 - (n - 1) * intervalPct / 100);
+          // 롱: 아래로 내려가며 분할 매수
+          return entry - (n - 1) * intervalPct;
         } else {
-          return entry * (1 + (n - 1) * intervalPct / 100);
+          // 숏: 위로 올라가며 분할 매도
+          return entry + (n - 1) * intervalPct;
         }
       }
 
