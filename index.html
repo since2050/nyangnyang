@@ -69,6 +69,10 @@
       width: 100%;
       outline: none;
     }
+    input:focus {
+      border-color: #38bdf8;
+      box-shadow: 0 0 0 1px #0f172a;
+    }
 
     .side-toggle {
       display: grid;
@@ -89,9 +93,13 @@
     }
     .side-btn.active-long {
       border-color: #22c55e;
+      background: radial-gradient(circle at top, #16a34a 0, #052e16 55%, #020617 100%);
+      color: #ecfdf5;
     }
     .side-btn.active-short {
       border-color: #f97316;
+      background: radial-gradient(circle at top, #f97316 0, #7c2d12 55%, #020617 100%);
+      color: #fff7ed;
     }
 
     .btn-main {
@@ -101,6 +109,12 @@
       font-weight: 700;
       font-size: 15px;
       padding: 12px;
+      box-shadow: 0 8px 25px rgba(34,197,94,0.5);
+      cursor: pointer;
+    }
+    .btn-main:active {
+      transform: translateY(1px);
+      box-shadow: 0 4px 16px rgba(34,197,94,0.5);
     }
 
     .result-grid {
@@ -124,106 +138,207 @@
       font-size: 15px;
       font-weight: 700;
     }
+    .result-row-wide {
+      grid-column: span 2;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 10px;
+      color: #9ca3af;
+      margin-bottom: 6px;
+    }
+    .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #22c55e;
+    }
+    .dot-red {
+      background: #f97316;
+    }
+
+    .small {
+      font-size: 10px;
+      color: #6b7280;
+      margin-top: 6px;
+    }
+
   </style>
 </head>
 <body>
   <div class="app">
     <div class="title">분할매수 계산기</div>
-    <div class="subtitle">롱/숏 · 분할 · 손절 · 익절 자동계산</div>
+    <div class="subtitle">희망가 · 방향 · 퍼센트만 넣고 한 번에 보기</div>
 
+    <!-- 입력 카드 -->
     <div class="card">
-      <div class="field-label">희망 매수가</div>
-      <input id="entry" type="number" placeholder="예: 90000">
+      <div class="badge"><span class="dot"></span>기본 설정</div>
 
-      <div class="field-label" style="margin-top:8px;">방향</div>
+      <div class="field-label">희망 매수가</div>
+      <input id="entryPrice" type="number" step="0.01" inputmode="decimal" placeholder="예: 89507" />
+
+      <div class="field-label" style="margin-top:10px;">매수 방향</div>
       <div class="side-toggle">
-        <div id="longBtn" class="side-btn active-long" onclick="setSide('long')">롱</div>
-        <div id="shortBtn" class="side-btn" onclick="setSide('short')">숏</div>
+        <div id="btnLong" class="side-btn active-long" onclick="setSide('long')">롱 (Long)</div>
+        <div id="btnShort" class="side-btn" onclick="setSide('short')">숏 (Short)</div>
       </div>
 
       <div class="field-row" style="margin-top:10px;">
-        <div>
-          <div class="field-label">분할 간격(%)</div>
-          <input id="gap" type="number" placeholder="예: 0.5">
+        <div style="flex:1;">
+          <div class="field-label">분할 간격 (%)</div>
+          <input id="intervalPct" type="number" step="0.01" inputmode="decimal" placeholder="예: 0.5" />
         </div>
-        <div>
-          <div class="field-label">손절(%)</div>
-          <input id="sl" type="number" placeholder="예: 0.3">
+        <div style="flex:1;">
+          <div class="field-label">손절 (%)</div>
+          <input id="stopPct" type="number" step="0.01" inputmode="decimal" placeholder="예: 0.3" />
         </div>
       </div>
 
-      <div class="field-label" style="margin-top:10px;">익절(%)</div>
-      <input id="tp" type="number" placeholder="예: 1.0">
+      <div class="field-row" style="margin-top:10px;">
+        <div style="flex:1;">
+          <div class="field-label">1차 익절 (%)</div>
+          <input id="tp1Pct" type="number" step="0.01" inputmode="decimal" placeholder="예: 1.0" />
+        </div>
+        <div style="flex:1;">
+          <div class="field-label">2차 익절 (%) (선택)</div>
+          <input id="tp2Pct" type="number" step="0.01" inputmode="decimal" placeholder="-" />
+        </div>
+      </div>
 
-      <button class="btn-main" onclick="calc()">계산하기</button>
+      <div class="field-row" style="margin-top:10px;">
+        <div style="flex:1;">
+          <div class="field-label">3차 익절 (%) (선택)</div>
+          <input id="tp3Pct" type="number" step="0.01" inputmode="decimal" placeholder="-" />
+        </div>
+        <div style="flex:1; display:flex; align-items:flex-end;">
+          <button class="btn-main" onclick="calculate()">계산하기</button>
+        </div>
+      </div>
+
+      <div class="small">* 희망가 / 분할 / 손절 / 1차 익절은 필수 입력</div>
     </div>
 
-    <div class="card" id="result" style="display:none;">
-      <div class="result-grid">
-        <div class="result-item">
-          <div class="result-label">1차 매수가</div>
-          <div class="result-value" id="p1"></div>
-        </div>
-        <div class="result-item">
-          <div class="result-label">2차 매수가</div>
-          <div class="result-value" id="p2"></div>
-        </div>
-        <div class="result-item">
-          <div class="result-label">3차 매수가</div>
-          <div class="result-value" id="p3"></div>
-        </div>
-        <div class="result-item">
-          <div class="result-label">손절가</div>
-          <div class="result-value" id="stop"></div>
-        </div>
-        <div class="result-item">
-          <div class="result-label">익절가</div>
-          <div class="result-value" id="take"></div>
-        </div>
+    <!-- 결과 카드 -->
+    <div class="card" id="resultCard" style="display:none;">
+      <div class="badge">
+        <span class="dot-red"></span>
+        결과
       </div>
+      <div class="result-grid" id="resultGrid"></div>
     </div>
   </div>
 
-<script>
-let side = "long";
+  <script>
+    let side = "long";
 
-function setSide(s) {
-  side = s;
-  longBtn.classList.toggle("active-long", s==='long');
-  shortBtn.classList.toggle("active-short", s==='short');
-}
+    function setSide(s) {
+      side = s;
+      const btnLong = document.getElementById("btnLong");
+      const btnShort = document.getElementById("btnShort");
+      if (s === "long") {
+        btnLong.classList.add("active-long");
+        btnShort.classList.remove("active-short");
+      } else {
+        btnShort.classList.add("active-short");
+        btnLong.classList.remove("active-long");
+      }
+    }
 
-function calc(){
-  const entry = parseFloat(entry.value);
-  const gapPct = parseFloat(gap.value);
-  const slPct = parseFloat(sl.value);
-  const tpPct = parseFloat(tp.value);
+    function fmt(x) {
+      if (isNaN(x)) return "-";
+      return x.toFixed(2);
+    }
 
-  if(isNaN(entry) || isNaN(gapPct) || isNaN(slPct) || isNaN(tpPct)){
-    alert("값을 모두 입력해 주세요");
-    return;
-  }
+    function calculate() {
+      const entry = parseFloat(document.getElementById("entryPrice").value);
+      const intervalPct = parseFloat(document.getElementById("intervalPct").value);
+      const stopPct = parseFloat(document.getElementById("stopPct").value);
+      const tp1Pct = parseFloat(document.getElementById("tp1Pct").value);
+      const tp2Pct = parseFloat(document.getElementById("tp2Pct").value);
+      const tp3Pct = parseFloat(document.getElementById("tp3Pct").value);
 
-  function price(n){
-    return side==="long"
-      ? entry*(1-(n-1)*gapPct/100)
-      : entry*(1+(n-1)*gapPct/100);
-  }
+      if (isNaN(entry) || isNaN(intervalPct) || isNaN(stopPct) || isNaN(tp1Pct)) {
+        alert("희망 매수가, 분할 간격, 손절, 1차 익절은 반드시 입력해야 합니다.");
+        return;
+      }
 
-  p1.innerText = price(1).toFixed(2);
-  p2.innerText = price(2).toFixed(2);
-  p3.innerText = price(3).toFixed(2);
+      function buyPrice(n) {
+        if (side === "long") {
+          return entry * (1 - (n - 1) * intervalPct / 100);
+        } else {
+          return entry * (1 + (n - 1) * intervalPct / 100);
+        }
+      }
 
-  stop.innerText = side==="long"
-    ? (entry*(1-slPct/100)).toFixed(2)
-    : (entry*(1+slPct/100)).toFixed(2);
+      const p1 = buyPrice(1);
+      const p2 = buyPrice(2);
+      const p3 = buyPrice(3);
 
-  take.innerText = side==="long"
-    ? (entry*(1+tpPct/100)).toFixed(2)
-    : (entry*(1-tpPct/100)).toFixed(2);
+      let stopPrice;
+      if (side === "long") {
+        stopPrice = entry * (1 - stopPct / 100);
+      } else {
+        stopPrice = entry * (1 + stopPct / 100);
+      }
 
-  result.style.display="block";
-}
-</script>
+      function tp(pct) {
+        if (side === "long") {
+          return entry * (1 + pct / 100);
+        } else {
+          return entry * (1 - pct / 100);
+        }
+      }
+
+      const tp1 = tp(tp1Pct);
+      const tp2 = isNaN(tp2Pct) ? null : tp(tp2Pct);
+      const tp3 = isNaN(tp3Pct) ? null : tp(tp3Pct);
+
+      let html = "";
+      html += `
+        <div class="result-item">
+          <div class="result-label">1차 매수가</div>
+          <div class="result-value">${fmt(p1)}</div>
+        </div>
+        <div class="result-item">
+          <div class="result-label">2차 매수가</div>
+          <div class="result-value">${fmt(p2)}</div>
+        </div>
+        <div class="result-item">
+          <div class="result-label">3차 매수가</div>
+          <div class="result-value">${fmt(p3)}</div>
+        </div>
+        <div class="result-item">
+          <div class="result-label">손절가</div>
+          <div class="result-value">${fmt(stopPrice)}</div>
+        </div>
+        <div class="result-item result-row-wide">
+          <div class="result-label">1차 익절가</div>
+          <div class="result-value">${fmt(tp1)}</div>
+        </div>
+      `;
+      if (tp2 !== null) {
+        html += `
+          <div class="result-item">
+            <div class="result-label">2차 익절가</div>
+            <div class="result-value">${fmt(tp2)}</div>
+          </div>
+        `;
+      }
+      if (tp3 !== null) {
+        html += `
+          <div class="result-item">
+            <div class="result-label">3차 익절가</div>
+            <div class="result-value">${fmt(tp3)}</div>
+          </div>
+        `;
+      }
+
+      document.getElementById("resultGrid").innerHTML = html;
+      document.getElementById("resultCard").style.display = "block";
+    }
+  </script>
 </body>
 </html>
