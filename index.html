@@ -1,313 +1,202 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8" />
-  <title>분할매수 계산기</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-  <meta name="theme-color" content="#111827" />
-  <style>
-    :root {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      color-scheme: dark;
-    }
-    * { box-sizing: border-box; }
+<meta charset="UTF-8">
+<title>분할매수 계산기</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    body {
-      margin: 0;
-      background: #020617;
-      color: #e5e7eb;
-      min-height: 100vh;
-      display: flex;
-      justify-content: center;
-    }
-    .app {
-      width: 100%;
-      max-width: 520px;
-      padding: 16px 16px 28px;
-    }
+<style>
+body {
+  margin:0;
+  background:#020617;
+  color:#e5e7eb;
+  font-family:system-ui;
+}
+.app {
+  max-width:520px;
+  margin:auto;
+  padding:16px;
+}
+.card {
+  border:1px solid #1f2937;
+  border-radius:14px;
+  padding:14px;
+  margin-bottom:14px;
+}
+input, button {
+  width:100%;
+  padding:8px;
+  border-radius:10px;
+  border:1px solid #374151;
+  background:#020617;
+  color:#e5e7eb;
+}
+button {
+  margin-top:10px;
+  background:linear-gradient(135deg,#22c55e,#0ea5e9);
+  font-weight:700;
+}
+.field { margin-bottom:10px; }
+label { font-size:12px; color:#9ca3af; }
 
-    .title {
-      text-align: center;
-      font-size: 20px;
-      font-weight: 700;
-      margin-bottom: 4px;
-    }
-    .subtitle {
-      text-align: center;
-      font-size: 11px;
-      color: #9ca3af;
-      margin-bottom: 16px;
-    }
-
-    .card {
-      background: #020617;
-      border-radius: 16px;
-      border: 1px solid #1f2937;
-      padding: 14px 12px;
-      margin-bottom: 14px;
-      box-shadow: 0 14px 35px rgba(15,23,42,0.95);
-    }
-
-    .field-label {
-      font-size: 12px;
-      color: #9ca3af;
-      margin-bottom: 4px;
-    }
-
-    .field-row {
-      display: flex;
-      gap: 8px;
-    }
-
-    input, button {
-      border-radius: 12px;
-      border: 1px solid #374151;
-      background: #020617;
-      color: #e5e7eb;
-      font-size: 14px;
-      padding: 8px 10px;
-      width: 100%;
-      outline: none;
-    }
-
-    .side-toggle {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 6px;
-      margin-top: 4px;
-    }
-    .side-btn {
-      border-radius: 999px;
-      border: 1px solid #374151;
-      padding: 8px 0;
-      font-size: 13px;
-      font-weight: 600;
-      text-align: center;
-      cursor: pointer;
-      user-select: none;
-      background: #020617;
-    }
-    .side-btn.active-long {
-      border-color: #22c55e;
-      background: radial-gradient(circle at top, #16a34a 0, #052e16 55%, #020617 100%);
-    }
-    .side-btn.active-short {
-      border-color: #f97316;
-      background: radial-gradient(circle at top, #f97316 0, #7c2d12 55%, #020617 100%);
-    }
-
-    .btn-main {
-      margin-top: 10px;
-      background: linear-gradient(135deg, #22c55e, #0ea5e9);
-      border: none;
-      font-weight: 700;
-      font-size: 15px;
-      padding: 12px;
-      cursor: pointer;
-    }
-
-    .result-grid {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 12px;
-      margin-top: 8px;
-    }
-    .result-grid th,
-    .result-grid td {
-      border: 1px solid #1f2937;
-      padding: 6px 4px;
-      text-align: right;
-    }
-    .result-grid th {
-      background: #0b1120;
-      color: #9ca3af;
-    }
-    .result-grid td:first-child,
-    .result-grid th:first-child {
-      text-align: center;
-    }
-
-    .small {
-      font-size: 10px;
-      color: #6b7280;
-      margin-top: 6px;
-    }
-  </style>
+table {
+  width:100%;
+  border-collapse:collapse;
+  font-size:12px;
+  margin-top:8px;
+}
+th, td {
+  border:1px solid #1f2937;
+  padding:6px;
+  text-align:right;
+}
+th:first-child, td:first-child {
+  text-align:center;
+}
+th {
+  background:#0b1120;
+  color:#9ca3af;
+}
+</style>
 </head>
+
 <body>
 <div class="app">
-  <div class="title">분할매수 계산기</div>
-  <div class="subtitle">희망가 · 시드 · 분할 간격 · 레버리지 자동 계산</div>
 
-  <div class="card">
-    <div class="field-label">희망 기준 매수가 (USDT)</div>
-    <input id="entryPrice" type="number" value="90000" />
-
-    <div class="field-label" style="margin-top:10px;">포지션 방향</div>
-    <div class="side-toggle">
-      <div id="btnLong" class="side-btn active-long" onclick="setSide('long')">롱 (LONG)</div>
-      <div id="btnShort" class="side-btn" onclick="setSide('short')">숏 (SHORT)</div>
-    </div>
-
-    <div class="field-row" style="margin-top:10px;">
-      <div>
-        <div class="field-label">분할 간격 (USDT)</div>
-        <input id="intervalUsd" type="number" value="150" />
-      </div>
-      <div>
-        <div class="field-label">손절 %</div>
-        <input id="stopPct" type="number" value="0.3" />
-      </div>
-    </div>
-
-    <div class="field-row" style="margin-top:10px;">
-      <div>
-        <div class="field-label">전체 시드 (USDT)</div>
-        <input id="totalSeed" type="number" value="3782" />
-      </div>
-      <div>
-        <div class="field-label">이번 거래 시드 비율</div>
-        <input id="tradeSeedRatio" type="number" value="0.4" />
-      </div>
-    </div>
-
-    <!-- 레버리지 추가 -->
-    <div class="field-row" style="margin-top:10px;">
-      <div>
-        <div class="field-label">레버리지 (배율)</div>
-        <input id="leverage" type="number" value="10" />
-      </div>
-    </div>
-
-    <div class="field-row" style="margin-top:10px;">
-      <div>
-        <div class="field-label">1차 익절 %</div>
-        <input id="tp1Pct" type="number" value="0.7" />
-      </div>
-      <div>
-        <div class="field-label">분할 비중</div>
-        <input id="splitRatio" value="0.2,0.3,0.5" />
-      </div>
-    </div>
-
-    <button class="btn-main" onclick="calculate()">계산하기</button>
+<div class="card">
+  <div class="field">
+    <label>희망 기준 매수가 (USDT)</label>
+    <input id="entry" type="number" value="90000">
   </div>
 
-  <div class="card" id="resultCard" style="display:none;">
-  <div id="summaryText" class="small"></div>
+  <div class="field">
+    <label>포지션</label>
+    <select id="side">
+      <option value="long">롱 (LONG)</option>
+      <option value="short">숏 (SHORT)</option>
+    </select>
+  </div>
 
-  <table class="result-grid" id="avgTable"></table>
-  <table class="result-grid" id="buyTable" style="margin-top:10px;"></table>
-  <table class="result-grid" id="sellTable" style="margin-top:10px;"></table>
+  <div class="field">
+    <label>분할 간격 (USDT)</label>
+    <input id="interval" type="number" value="150">
+  </div>
+
+  <div class="field">
+    <label>손절 %</label>
+    <input id="stopPct" type="number" value="0.3">
+  </div>
+
+  <div class="field">
+    <label>전체 시드 (USDT)</label>
+    <input id="totalSeed" type="number" value="3782">
+  </div>
+
+  <div class="field">
+    <label>이번 거래 시드 비율</label>
+    <input id="tradeRatio" type="number" value="0.4">
+  </div>
+
+  <div class="field">
+    <label>레버리지</label>
+    <input id="leverage" type="number" value="10">
+  </div>
+
+  <div class="field">
+    <label>분할 비중 (합계 1)</label>
+    <input id="splitRatio" value="0.2,0.3,0.5">
+  </div>
+
+  <div class="field">
+    <label>익절 % (1,2,3차)</label>
+    <input id="tpPct" value="0.7,1.2,1.8">
+  </div>
+
+  <button onclick="calc()">계산하기</button>
+</div>
+
+<div class="card" id="result" style="display:none">
+  <div id="summary"></div>
+
+  <table id="avgTable"></table>
+  <table id="buyTable"></table>
+  <table id="sellTable"></table>
+</div>
+
 </div>
 
 <script>
-let side = "long";
-function setSide(s){
-  side = s;
-  btnLong.classList.toggle("active-long", s==="long");
-  btnShort.classList.toggle("active-short", s==="short");
-}
+function calc() {
 
-function calculate() {
-  const entry = +document.getElementById("entryPrice").value;
-  const interval = +document.getElementById("intervalUsd").value;
-  const stopPct = +document.getElementById("stopPct").value;
-  const totalSeed = +document.getElementById("totalSeed").value;
-  const tradeRatio = +document.getElementById("tradeSeedRatio").value;
-  const leverage = +document.getElementById("leverage").value;
-  const tp1Pct = +document.getElementById("tp1Pct").value;
-  const tpRatios = [0.3, 0.4, 0.3];
+  const entry = +entry.value;
+  const interval = +interval.value;
+  const stopPct = +stopPct.value / 100;
+  const totalSeed = +totalSeed.value;
+  const tradeRatio = +tradeRatio.value;
+  const leverage = +leverage.value;
+  const sideVal = side.value;
 
-  const splitRatios = document
-    .getElementById("splitRatio")
-    .value.split(",")
-    .map(v => +v.trim());
+  const split = splitRatio.value.split(",").map(Number);
+  const tpPctArr = tpPct.value.split(",").map(v => +v / 100);
 
-  // 1. 분할 매수가
+  const tradeSeed = totalSeed * tradeRatio;
+
   const prices = [
     entry,
-    side === "long" ? entry - interval : entry + interval,
-    side === "long" ? entry - interval * 2 : entry + interval * 2
+    sideVal === "long" ? entry - interval : entry + interval,
+    sideVal === "long" ? entry - interval*2 : entry + interval*2
   ];
 
-  // 2. 트랜치 증거금
-  const marginPerTranche = prices.map((_, i) => tradeSeed * splitRatios[i]);
+  const margin = split.map(r => tradeSeed * r);
+  const qty = prices.map((p,i)=> (margin[i]*leverage)/p);
+  const totalQty = qty.reduce((a,b)=>a+b,0);
 
-  // 3. 레버리지 반영 수량
-  const qtyPerTranche = prices.map((p, i) =>
-    (marginPerTranche[i] * leverage) / p
-  );
-
-  const totalQty = qtyPerTranche.reduce((a, b) => a + b, 0);
-
-  // 4. 가중 평균가
   const avgPrice = (tradeSeed * leverage) / totalQty;
 
-  // 5. 손절가
-  const stopPrice =
-    side === "long"
-      ? avgPrice * (1 - stopPct / 100)
-      : avgPrice * (1 + stopPct / 100);
+  const stopPrice = sideVal === "long"
+    ? avgPrice * (1 - stopPct)
+    : avgPrice * (1 + stopPct);
 
-  // 6. 익절가
-  const tp1Price =
-    side === "long"
-      ? avgPrice * (1 + tp1Pct / 100)
-      : avgPrice * (1 - tp1Pct / 100);
+  const tpPrices = tpPctArr.map(p =>
+    sideVal === "long"
+      ? avgPrice * (1 + p)
+      : avgPrice * (1 - p)
+  );
 
-  const tp2 = tp2PriceInput.value ? +tp2PriceInput.value : null;
-  const tp3 = tp3PriceInput.value ? +tp3PriceInput.value : null;
-
-  const tpPrices = [tp1Price, tp2, tp3];
-  const tpQty = tpRatios.map(r => totalQty * r);
-
-  /* ================= 출력 ================= */
-
-  summaryText.innerText =
+  document.getElementById("summary").innerText =
     `거래 시드 ${tradeSeed.toFixed(2)} USDT / 레버리지 x${leverage}
-     → 포지션 ${ (tradeSeed * leverage).toFixed(2) } USDT
-     / 총 수량 ${ totalQty.toFixed(6) } BTC`;
+     · 총 수량 ${totalQty.toFixed(6)} BTC`;
 
-  // 평균가 / 손절
   avgTable.innerHTML = `
     <tr><th>항목</th><th>가격</th></tr>
-    <tr><td>가중 평균가</td><td>${avgPrice.toFixed(2)}</td></tr>
+    <tr><td>평균가</td><td>${avgPrice.toFixed(2)}</td></tr>
     <tr><td>손절가</td><td>${stopPrice.toFixed(2)}</td></tr>
   `;
 
-  // 매수 테이블
   buyTable.innerHTML = `
-    <tr><th>차수</th><th>가격</th><th>증거금</th><th>매수수량</th></tr>
+    <tr><th>차수</th><th>가격</th><th>증거금</th><th>수량</th></tr>
     ${prices.map((p,i)=>`
       <tr>
-        <td>${i+1}차</td>
+        <td>${i+1}</td>
         <td>${p.toFixed(2)}</td>
-        <td>${marginPerTranche[i].toFixed(2)}</td>
-        <td>${qtyPerTranche[i].toFixed(6)}</td>
+        <td>${margin[i].toFixed(2)}</td>
+        <td>${qty[i].toFixed(6)}</td>
       </tr>`).join("")}
-    <tr>
-      <td>합계</td><td>-</td>
-      <td>${tradeSeed.toFixed(2)}</td>
-      <td>${totalQty.toFixed(6)}</td>
-    </tr>
   `;
 
-  // 익절 테이블
   sellTable.innerHTML = `
-    <tr><th>차수</th><th>익절가</th><th>매도수량</th><th>비중</th></tr>
-    ${tpPrices.map((p,i)=> p ? `
+    <tr><th>차수</th><th>익절가</th><th>매도수량</th></tr>
+    ${tpPrices.map((p,i)=>`
       <tr>
-        <td>${i+1}차</td>
+        <td>${i+1}</td>
         <td>${p.toFixed(2)}</td>
-        <td>${tpQty[i].toFixed(6)}</td>
-        <td>${(tpRatios[i]*100).toFixed(1)}%</td>
-      </tr>` : "").join("")}
+        <td>${(totalQty*[0.3,0.4,0.3][i]).toFixed(6)}</td>
+      </tr>`).join("")}
   `;
 
-  resultCard.style.display = "block";
+  result.style.display = "block";
 }
-
 </script>
+
 </body>
 </html>
