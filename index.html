@@ -207,44 +207,104 @@ function setSide(s){
   btnShort.classList.toggle("active-short", s==="short");
 }
 
-function calculate(){
+function calculate() {
   const entry = +entryPrice.value;
   const interval = +intervalUsd.value;
-  const seed = +totalSeed.value * +tradeSeedRatio.value;
-  const lev = +leverage.value;
+  const stopPct = +stopPctInput.value;
+  const totalSeed = +totalSeedInput.value;
+  const tradeRatio = +tradeSeedRatioInput.value;
+  const leverage = +leverageInput.value;
+  const tp1Pct = +tp1PctInput.value;
 
-  const ratios = splitRatio.value.split(",").map(Number);
+  const tradeSeed = totalSeed * tradeRatio;
+
+  const splitRatios = parseRatio(splitRatioInput.value, 3);
+  const tpRatios = parseRatio(tpRatioInput.value, 3);
+
+  // 1. 분할 매수가
   const prices = [
     entry,
-    side==="long" ? entry-interval : entry+interval,
-    side==="long" ? entry-interval*2 : entry+interval*2
+    side === "long" ? entry - interval : entry + interval,
+    side === "long" ? entry - interval * 2 : entry + interval * 2
   ];
 
-  let html = "<tr><th>단계</th><th>가격</th><th>증거금</th><th>매수수량</th></tr>";
-  let totalQty = 0;
+  // 2. 트랜치 증거금
+  const marginPerTranche = prices.map((_, i) => tradeSeed * splitRatios[i]);
 
-  prices.forEach((p,i)=>{
-    const margin = seed * ratios[i];
-    const qty = (margin * lev) / p;
-    totalQty += qty;
-    html += `<tr>
-      <td>${i+1}차</td>
-      <td>${p.toFixed(2)}</td>
-      <td>${margin.toFixed(2)}</td>
-      <td>${qty.toFixed(6)}</td>
-    </tr>`;
-  });
+  // 3. 레버리지 반영 수량
+  const qtyPerTranche = prices.map((p, i) =>
+    (marginPerTranche[i] * leverage) / p
+  );
 
-  html += `<tr><td>합계</td><td>-</td><td>${seed.toFixed(2)}</td><td>${totalQty.toFixed(6)}</td></tr>`;
-  buyTable.innerHTML = html;
+  const totalQty = qtyPerTranche.reduce((a, b) => a + b, 0);
+
+  // 4. 가중 평균가
+  const avgPrice = (tradeSeed * leverage) / totalQty;
+
+  // 5. 손절가
+  const stopPrice =
+    side === "long"
+      ? avgPrice * (1 - stopPct / 100)
+      : avgPrice * (1 + stopPct / 100);
+
+  // 6. 익절가
+  const tp1Price =
+    side === "long"
+      ? avgPrice * (1 + tp1Pct / 100)
+      : avgPrice * (1 - tp1Pct / 100);
+
+  const tp2 = tp2PriceInput.value ? +tp2PriceInput.value : null;
+  const tp3 = tp3PriceInput.value ? +tp3PriceInput.value : null;
+
+  const tpPrices = [tp1Price, tp2, tp3];
+  const tpQty = tpRatios.map(r => totalQty * r);
+
+  /* ================= 출력 ================= */
 
   summaryText.innerText =
-    `거래 시드 ${seed.toFixed(2)} USDT · 레버리지 x${lev} → 실제 포지션 ${(
-      seed * lev
-    ).toFixed(2)} USDT`;
+    `거래 시드 ${tradeSeed.toFixed(2)} USDT / 레버리지 x${leverage}
+     → 포지션 ${ (tradeSeed * leverage).toFixed(2) } USDT
+     / 총 수량 ${ totalQty.toFixed(6) } BTC`;
 
-  resultCard.style.display="block";
+  // 평균가 / 손절
+  avgTable.innerHTML = `
+    <tr><th>항목</th><th>가격</th></tr>
+    <tr><td>가중 평균가</td><td>${avgPrice.toFixed(2)}</td></tr>
+    <tr><td>손절가</td><td>${stopPrice.toFixed(2)}</td></tr>
+  `;
+
+  // 매수 테이블
+  buyTable.innerHTML = `
+    <tr><th>차수</th><th>가격</th><th>증거금</th><th>매수수량</th></tr>
+    ${prices.map((p,i)=>`
+      <tr>
+        <td>${i+1}차</td>
+        <td>${p.toFixed(2)}</td>
+        <td>${marginPerTranche[i].toFixed(2)}</td>
+        <td>${qtyPerTranche[i].toFixed(6)}</td>
+      </tr>`).join("")}
+    <tr>
+      <td>합계</td><td>-</td>
+      <td>${tradeSeed.toFixed(2)}</td>
+      <td>${totalQty.toFixed(6)}</td>
+    </tr>
+  `;
+
+  // 익절 테이블
+  sellTable.innerHTML = `
+    <tr><th>차수</th><th>익절가</th><th>매도수량</th><th>비중</th></tr>
+    ${tpPrices.map((p,i)=> p ? `
+      <tr>
+        <td>${i+1}차</td>
+        <td>${p.toFixed(2)}</td>
+        <td>${tpQty[i].toFixed(6)}</td>
+        <td>${(tpRatios[i]*100).toFixed(1)}%</td>
+      </tr>` : "").join("")}
+  `;
+
+  resultCard.style.display = "block";
 }
+
 </script>
 </body>
 </html>
