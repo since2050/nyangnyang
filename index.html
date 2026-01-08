@@ -69,10 +69,6 @@
       width: 100%;
       outline: none;
     }
-    input:focus {
-      border-color: #38bdf8;
-      box-shadow: 0 0 0 1px #0f172a;
-    }
 
     .side-toggle {
       display: grid;
@@ -94,12 +90,10 @@
     .side-btn.active-long {
       border-color: #22c55e;
       background: radial-gradient(circle at top, #16a34a 0, #052e16 55%, #020617 100%);
-      color: #ecfdf5;
     }
     .side-btn.active-short {
       border-color: #f97316;
       background: radial-gradient(circle at top, #f97316 0, #7c2d12 55%, #020617 100%);
-      color: #fff7ed;
     }
 
     .btn-main {
@@ -109,12 +103,7 @@
       font-weight: 700;
       font-size: 15px;
       padding: 12px;
-      box-shadow: 0 8px 25px rgba(34,197,94,0.5);
       cursor: pointer;
-    }
-    .btn-main:active {
-      transform: translateY(1px);
-      box-shadow: 0 4px 16px rgba(34,197,94,0.5);
     }
 
     .result-grid {
@@ -131,30 +120,11 @@
     }
     .result-grid th {
       background: #0b1120;
-      font-weight: 600;
       color: #9ca3af;
     }
     .result-grid td:first-child,
     .result-grid th:first-child {
       text-align: center;
-    }
-
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      font-size: 10px;
-      color: #9ca3af;
-      margin-bottom: 6px;
-    }
-    .dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: #22c55e;
-    }
-    .dot-red {
-      background: #f97316;
     }
 
     .small {
@@ -165,261 +135,116 @@
   </style>
 </head>
 <body>
-  <div class="app">
-    <div class="title">분할매수 계산기</div>
-    <div class="subtitle">희망가 · 시드 · 분할 간격 넣으면 자동 계산</div>
+<div class="app">
+  <div class="title">분할매수 계산기</div>
+  <div class="subtitle">희망가 · 시드 · 분할 간격 · 레버리지 자동 계산</div>
 
-    <!-- 입력 카드 -->
-    <div class="card">
-      <div class="badge"><span class="dot"></span>기본 설정</div>
+  <div class="card">
+    <div class="field-label">희망 기준 매수가 (USDT)</div>
+    <input id="entryPrice" type="number" value="90000" />
 
-      <div class="field-label">희망 기준 매수가 (USDT)</div>
-      <input id="entryPrice" type="number" step="0.01" inputmode="decimal" value="90000" />
+    <div class="field-label" style="margin-top:10px;">포지션 방향</div>
+    <div class="side-toggle">
+      <div id="btnLong" class="side-btn active-long" onclick="setSide('long')">롱 (LONG)</div>
+      <div id="btnShort" class="side-btn" onclick="setSide('short')">숏 (SHORT)</div>
+    </div>
 
-      <div class="field-label" style="margin-top:10px;">포지션 방향</div>
-      <div class="side-toggle">
-        <div id="btnLong" class="side-btn active-long" onclick="setSide('long')">롱 (LONG)</div>
-        <div id="btnShort" class="side-btn" onclick="setSide('short')">숏 (SHORT)</div>
+    <div class="field-row" style="margin-top:10px;">
+      <div>
+        <div class="field-label">분할 간격 (USDT)</div>
+        <input id="intervalUsd" type="number" value="150" />
       </div>
-
-      <div class="field-row" style="margin-top:10px;">
-        <div style="flex:1;">
-          <div class="field-label">분할 간격 (USDT)</div>
-          <input id="intervalUsd" type="number" step="0.01" inputmode="decimal" value="150" />
-        </div>
-        <div style="flex:1;">
-          <div class="field-label">손절 % (예: 0.3)</div>
-          <input id="stopPct" type="number" step="0.01" inputmode="decimal" value="0.3" />
-        </div>
-      </div>
-
-      <div class="field-row" style="margin-top:10px;">
-        <div style="flex:1;">
-          <div class="field-label">전체 시드 금액 (USDT)</div>
-          <input id="totalSeed" type="number" step="0.01" inputmode="decimal" value="3782" />
-        </div>
-        <div style="flex:1;">
-          <div class="field-label">이번 거래 총 시드 비율</div>
-          <input id="tradeSeedRatio" type="number" step="0.01" inputmode="decimal" value="0.4" />
-        </div>
-      </div>
-
-      <div class="field-row" style="margin-top:10px;">
-        <div style="flex:1;">
-          <div class="field-label">1차 익절 % (자동)</div>
-          <input id="tp1Pct" type="number" step="0.01" inputmode="decimal" value="0.7" />
-        </div>
-        <div style="flex:1;">
-          <div class="field-label">2차 익절가 (USDT, 선택)</div>
-          <input id="tp2Price" type="number" step="0.01" inputmode="decimal" placeholder="예: 89100" />
-        </div>
-      </div>
-
-      <div class="field-row" style="margin-top:10px;">
-        <div style="flex:1;">
-          <div class="field-label">3차 익절가 (USDT, 선택)</div>
-          <input id="tp3Price" type="number" step="0.01" inputmode="decimal" placeholder="예: 88200" />
-        </div>
-        <div style="flex:1;">
-          <div class="field-label">분할 비중 (1/2/3차)</div>
-          <input id="splitRatio" type="text" inputmode="decimal" value="0.2,0.3,0.5" />
-        </div>
-      </div>
-
-      <div class="field-row" style="margin-top:10px;">
-        <div style="flex:1;">
-          <div class="field-label">익절 비중 (1/2/3차)</div>
-          <input id="tpRatio" type="text" inputmode="decimal" value="0.3,0.4,0.3" />
-        </div>
-      </div>
-
-      <button class="btn-main" onclick="calculate()">계산하기</button>
-
-      <div class="small">
-        * 분할 간격은 가격 간격(USDT) 기준<br />
-        * 시드 비율, 분할/익절 비중은 합계가 1에 가깝게 입력하는 것을 권장
+      <div>
+        <div class="field-label">손절 %</div>
+        <input id="stopPct" type="number" value="0.3" />
       </div>
     </div>
 
-    <!-- 결과 카드 -->
-    <div class="card" id="resultCard" style="display:none;">
-      <div class="badge">
-        <span class="dot-red"></span>자동 계산 결과
+    <div class="field-row" style="margin-top:10px;">
+      <div>
+        <div class="field-label">전체 시드 (USDT)</div>
+        <input id="totalSeed" type="number" value="3782" />
       </div>
-
-      <div id="summaryText" class="small" style="margin-bottom:6px;"></div>
-
-      <!-- 가중 평균가 / 손절 -->
-      <table class="result-grid" id="avgTable"></table>
-
-      <!-- 매수 결과 -->
-      <table class="result-grid" id="buyTable" style="margin-top:12px;"></table>
-
-      <!-- 익절 결과 -->
-      <table class="result-grid" id="sellTable" style="margin-top:12px;"></table>
+      <div>
+        <div class="field-label">이번 거래 시드 비율</div>
+        <input id="tradeSeedRatio" type="number" value="0.4" />
+      </div>
     </div>
+
+    <!-- 레버리지 추가 -->
+    <div class="field-row" style="margin-top:10px;">
+      <div>
+        <div class="field-label">레버리지 (배율)</div>
+        <input id="leverage" type="number" value="10" />
+      </div>
+    </div>
+
+    <div class="field-row" style="margin-top:10px;">
+      <div>
+        <div class="field-label">1차 익절 %</div>
+        <input id="tp1Pct" type="number" value="0.7" />
+      </div>
+      <div>
+        <div class="field-label">분할 비중</div>
+        <input id="splitRatio" value="0.2,0.3,0.5" />
+      </div>
+    </div>
+
+    <button class="btn-main" onclick="calculate()">계산하기</button>
   </div>
 
-  <script>
-    let side = "long";
+  <div class="card" id="resultCard" style="display:none;">
+    <div id="summaryText" class="small"></div>
+    <table class="result-grid" id="buyTable"></table>
+  </div>
+</div>
 
-    function setSide(s) {
-      side = s;
-      const btnLong = document.getElementById("btnLong");
-      const btnShort = document.getElementById("btnShort");
-      if (s === "long") {
-        btnLong.classList.add("active-long");
-        btnShort.classList.remove("active-short");
-      } else {
-        btnShort.classList.add("active-short");
-        btnLong.classList.remove("active-long");
-      }
-    }
+<script>
+let side = "long";
+function setSide(s){
+  side = s;
+  btnLong.classList.toggle("active-long", s==="long");
+  btnShort.classList.toggle("active-short", s==="short");
+}
 
-    function fmt(x, digits = 3) {
-      if (isNaN(x)) return "-";
-      return Number(x).toFixed(digits);
-    }
+function calculate(){
+  const entry = +entryPrice.value;
+  const interval = +intervalUsd.value;
+  const seed = +totalSeed.value * +tradeSeedRatio.value;
+  const lev = +leverage.value;
 
-    // "0.2,0.3,0.5" -> [0.2,0.3,0.5] 정규화
-    function parseRatio(str, count) {
-      if (!str) return Array(count).fill(1 / count);
-      const parts = str
-        .split(",")
-        .map(s => parseFloat(s.trim()))
-        .filter(v => !isNaN(v) && v > 0);
+  const ratios = splitRatio.value.split(",").map(Number);
+  const prices = [
+    entry,
+    side==="long" ? entry-interval : entry+interval,
+    side==="long" ? entry-interval*2 : entry+interval*2
+  ];
 
-      if (parts.length === 0) return Array(count).fill(1 / count);
+  let html = "<tr><th>단계</th><th>가격</th><th>증거금</th><th>매수수량</th></tr>";
+  let totalQty = 0;
 
-      while (parts.length < count) parts.push(0);
-      if (parts.length > count) parts.length = count;
+  prices.forEach((p,i)=>{
+    const margin = seed * ratios[i];
+    const qty = (margin * lev) / p;
+    totalQty += qty;
+    html += `<tr>
+      <td>${i+1}차</td>
+      <td>${p.toFixed(2)}</td>
+      <td>${margin.toFixed(2)}</td>
+      <td>${qty.toFixed(6)}</td>
+    </tr>`;
+  });
 
-      const sum = parts.reduce((a, b) => a + b, 0);
-      if (sum <= 0) return Array(count).fill(1 / count);
+  html += `<tr><td>합계</td><td>-</td><td>${seed.toFixed(2)}</td><td>${totalQty.toFixed(6)}</td></tr>`;
+  buyTable.innerHTML = html;
 
-      return parts.map(v => v / sum);
-    }
+  summaryText.innerText =
+    `거래 시드 ${seed.toFixed(2)} USDT · 레버리지 x${lev} → 실제 포지션 ${(
+      seed * lev
+    ).toFixed(2)} USDT`;
 
-    function calculate() {
-      const entry = parseFloat(document.getElementById("entryPrice").value);
-      const intervalUsd = parseFloat(document.getElementById("intervalUsd").value);
-      const stopPct = parseFloat(document.getElementById("stopPct").value);
-      const totalSeed = parseFloat(document.getElementById("totalSeed").value);
-      const tradeSeedRatio = parseFloat(document.getElementById("tradeSeedRatio").value);
-      const tp1Pct = parseFloat(document.getElementById("tp1Pct").value);
-      const tp2Price = parseFloat(document.getElementById("tp2Price").value);
-      const tp3Price = parseFloat(document.getElementById("tp3Price").value);
-      const splitRatioStr = document.getElementById("splitRatio").value;
-      const tpRatioStr = document.getElementById("tpRatio").value;
-
-      if (
-        isNaN(entry) ||
-        isNaN(intervalUsd) ||
-        isNaN(stopPct) ||
-        isNaN(totalSeed) ||
-        isNaN(tradeSeedRatio) ||
-        isNaN(tp1Pct)
-      ) {
-        alert("희망가, 분할 간격, 손절, 전체 시드, 시드 비율, 1차 익절% 는 필수입니다.");
-        return;
-      }
-
-      const tradeSeed = totalSeed * tradeSeedRatio;
-
-      // 분할 비중 / 익절 비중
-      const splitRatios = parseRatio(splitRatioStr, 3);
-      const tpRatios = parseRatio(tpRatioStr, 3);
-
-      // 분할 매수가 (USDT 간격)
-      function buyPrice(n) {
-        if (side === "long") {
-          return entry - (n - 1) * intervalUsd;
-        } else {
-          return entry + (n - 1) * intervalUsd;
-        }
-      }
-
-      const prices = [buyPrice(1), buyPrice(2), buyPrice(3)];
-
-      // 트랜치별 시드 / 수량
-      const trancheSeed = prices.map((p, i) => tradeSeed * splitRatios[i]);
-      const trancheQty = prices.map((p, i) => (p > 0 ? trancheSeed[i] / p : 0));
-      const totalQty = trancheQty.reduce((a, b) => a + b, 0);
-
-      // 가중 평균가 = 사용 시드 / 총 수량
-      const avgPrice = totalQty > 0 ? tradeSeed / totalQty : entry;
-
-      // 손절가 (가중평균 기준)
-      const stopPrice =
-        side === "long"
-          ? avgPrice * (1 - stopPct / 100)
-          : avgPrice * (1 + stopPct / 100);
-
-      // 1차 익절가 (자동) : 가중평균 기준
-      const tp1Price =
-        side === "long"
-          ? avgPrice * (1 + tp1Pct / 100)
-          : avgPrice * (1 - tp1Pct / 100);
-
-      // 2,3차 익절가 (수동가)
-      const tp2 = isNaN(tp2Price) ? null : tp2Price;
-      const tp3 = isNaN(tp3Price) ? null : tp3Price;
-
-      const tpPrices = [tp1Price, tp2, tp3];
-
-      // 익절 단계별 매도 수량
-      const tpQty = tpRatios.map(r => totalQty * r);
-
-      // 요약 텍스트
-      document.getElementById("summaryText").innerText =
-        `총 시드 ${fmt(totalSeed,2)} USDT 중 ${fmt(tradeSeedRatio*100,2)}% (${fmt(tradeSeed,2)} USDT)를 이 거래에 사용. ` +
-        `총 매수 수량: ${fmt(totalQty,6)} BTC`;
-
-      // 가중 평균가 / 손절 테이블
-      let avgHtml = "";
-      avgHtml += "<tr><th>항목</th><th>가격 (USDT)</th></tr>";
-      avgHtml += `<tr><td>가중 평균가</td><td>${fmt(avgPrice,3)}</td></tr>`;
-      avgHtml += `<tr><td>손절가 (±${fmt(stopPct,3)}%)</td><td>${fmt(stopPrice,3)}</td></tr>`;
-      document.getElementById("avgTable").innerHTML = avgHtml;
-
-      // 매수 테이블
-      let buyHtml = "";
-      buyHtml += "<tr><th>단계</th><th>분할 가격 (USDT)</th><th>트랜치별 시드 (USDT)</th><th>매수 수량 (BTC)</th></tr>";
-      ["1차","2차","3차"].forEach((label, idx) => {
-        buyHtml += `<tr>
-          <td>${label}</td>
-          <td>${fmt(prices[idx], 3)}</td>
-          <td>${fmt(trancheSeed[idx], 2)}</td>
-          <td>${fmt(trancheQty[idx], 6)}</td>
-        </tr>`;
-      });
-      buyHtml += `<tr>
-        <td>합계</td>
-        <td>-</td>
-        <td>${fmt(tradeSeed, 2)}</td>
-        <td>${fmt(totalQty, 6)}</td>
-      </tr>`;
-      document.getElementById("buyTable").innerHTML = buyHtml;
-
-      // 익절(매도) 테이블
-      let sellHtml = "";
-      sellHtml += "<tr><th>단계</th><th>익절가 (USDT)</th><th>매도 수량 (BTC)</th><th>익절 비중</th></tr>";
-      ["1차 익절(자동)","2차 익절(수동가)","3차 익절(수동가)"].forEach((label, idx) => {
-        const price = tpPrices[idx];
-        const qty = tpQty[idx];
-        if (price && qty > 0) {
-          sellHtml += `<tr>
-            <td>${label}</td>
-            <td>${fmt(price, 3)}</td>
-            <td>${fmt(qty, 6)}</td>
-            <td>${fmt(tpRatios[idx]*100, 1)}%</td>
-          </tr>`;
-        }
-      });
-      document.getElementById("sellTable").innerHTML = sellHtml;
-
-      document.getElementById("resultCard").style.display = "block";
-    }
-  </script>
+  resultCard.style.display="block";
+}
+</script>
 </body>
 </html>
