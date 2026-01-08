@@ -194,9 +194,11 @@
   </div>
 
   <div class="card" id="resultCard" style="display:none;">
-    <div id="summaryText" class="small"></div>
-    <table class="result-grid" id="buyTable"></table>
-  </div>
+  <div id="summaryText" class="small"></div>
+
+  <table class="result-grid" id="avgTable"></table>
+  <table class="result-grid" id="buyTable" style="margin-top:10px;"></table>
+  <table class="result-grid" id="sellTable" style="margin-top:10px;"></table>
 </div>
 
 <script>
@@ -208,18 +210,19 @@ function setSide(s){
 }
 
 function calculate() {
-  const entry = +entryPrice.value;
-  const interval = +intervalUsd.value;
-  const stopPct = +stopPctInput.value;
-  const totalSeed = +totalSeedInput.value;
-  const tradeRatio = +tradeSeedRatioInput.value;
-  const leverage = +leverageInput.value;
-  const tp1Pct = +tp1PctInput.value;
+  const entry = +document.getElementById("entryPrice").value;
+  const interval = +document.getElementById("intervalUsd").value;
+  const stopPct = +document.getElementById("stopPct").value;
+  const totalSeed = +document.getElementById("totalSeed").value;
+  const tradeRatio = +document.getElementById("tradeSeedRatio").value;
+  const leverage = +document.getElementById("leverage").value;
+  const tp1Pct = +document.getElementById("tp1Pct").value;
+  const tpRatios = [0.3, 0.4, 0.3];
 
-  const tradeSeed = totalSeed * tradeRatio;
-
-  const splitRatios = parseRatio(splitRatioInput.value, 3);
-  const tpRatios = parseRatio(tpRatioInput.value, 3);
+  const splitRatios = document
+    .getElementById("splitRatio")
+    .value.split(",")
+    .map(v => +v.trim());
 
   // 1. 분할 매수가
   const prices = [
