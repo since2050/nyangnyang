@@ -2,59 +2,20 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<title>분할매수 계산기</title>
+<title>2분할 계산기 (40/60)</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-body{
-  margin:0;
-  background:#0b1220;
-  color:#e5e7eb;
-  font-family:system-ui;
-}
-.app{
-  max-width:520px;
-  margin:auto;
-  padding:16px;
-}
-.card{
-  border:1px solid #1f2937;
-  border-radius:14px;
-  padding:14px;
-  margin-bottom:14px;
-}
-label{
-  font-size:12px;
-  color:#9ca3af;
-}
+body{margin:0;background:#0b1220;color:#e5e7eb;font-family:system-ui;}
+.app{max-width:520px;margin:auto;padding:16px;}
+.card{border:1px solid #1f2937;border-radius:14px;padding:14px;margin-bottom:14px;}
+label{font-size:12px;color:#9ca3af;}
 input,select,button{
-  width:100%;
-  padding:8px;
-  margin-top:4px;
-  border-radius:8px;
-  border:1px solid #374151;
-  background:#020617;
-  color:#e5e7eb;
-}
-button{
-  margin-top:12px;
-  font-weight:700;
-  background:linear-gradient(135deg,#22c55e,#0ea5e9);
-  border:none;
-}
-table{
-  width:100%;
-  margin-top:10px;
-  font-size:13px;
-  border-collapse:collapse;
-}
-td{
-  padding:6px;
-  border-bottom:1px solid #1f2937;
-}
-.value{
-  text-align:right;
-  font-weight:700;
-}
+width:100%;padding:8px;margin-top:4px;border-radius:8px;
+border:1px solid #374151;background:#020617;color:#e5e7eb;}
+button{margin-top:12px;font-weight:700;background:#22c55e;border:none;}
+table{width:100%;margin-top:10px;font-size:13px;}
+td{padding:6px;border-bottom:1px solid #1f2937;}
+.value{text-align:right;font-weight:700;}
 </style>
 </head>
 
@@ -62,47 +23,41 @@ td{
 <div class="app">
 
 <div class="card">
-  <label>포지션 방향</label>
-  <select id="side">
-    <option value="LONG">LONG</option>
-    <option value="SHORT">SHORT</option>
-  </select>
+<label>포지션</label>
+<select id="side">
+<option>LONG</option>
+<option selected>SHORT</option>
+</select>
 
-  <label>기준 매수가</label>
-  <input id="base" type="number" value="85117">
+<label>기준가</label>
+<input id="base" type="number" value="65600">
 
-  <label>전체 시드 (USDT)</label>
-  <input id="capital" type="number" value="3782">
+<label>전체 시드</label>
+<input id="capital" type="number" value="3500">
 
-  <label>사용 비율 (예: 0.4)</label>
-  <input id="ratio" type="number" step="0.01" value="0.4">
+<label>사용 비율</label>
+<input id="ratio" type="number" step="0.01" value="0.4">
 
-  <label>분할 간격</label>
-  <input id="gap" type="number" value="150">
+<label>분할 간격</label>
+<input id="gap" type="number" value="150">
 
-  <label>레버리지</label>
-  <input id="lev" type="number" value="10">
+<label>레버리지</label>
+<input id="lev" type="number" value="10">
 
-  <button onclick="calc()">계산</button>
+<button onclick="calc()">계산</button>
 </div>
 
 <div class="card">
 <table>
-<tr><td>사용 시드</td><td class="value" id="seedUse"></td></tr>
+<tr><td>사용 시드</td><td class="value" id="seed"></td></tr>
 <tr><td>1차 가격</td><td class="value" id="p1"></td></tr>
 <tr><td>2차 가격</td><td class="value" id="p2"></td></tr>
-<tr><td>3차 가격</td><td class="value" id="p3"></td></tr>
-<tr><td>가중 평균가</td><td class="value" id="avg"></td></tr>
+<tr><td>1차 수량</td><td class="value" id="q1"></td></tr>
+<tr><td>2차 수량</td><td class="value" id="q2"></td></tr>
+<tr><td>총 수량</td><td class="value" id="qt"></td></tr>
+<tr><td>평균가</td><td class="value" id="avg"></td></tr>
 <tr><td>손절가 (0.3%)</td><td class="value" id="sl"></td></tr>
-<tr><td>총 수량</td><td class="value" id="qty"></td></tr>
-</table>
-</div>
-
-<div class="card">
-<table>
-<tr><td>1차 수량 (20%)</td><td class="value" id="q1"></td></tr>
-<tr><td>2차 수량 (30%)</td><td class="value" id="q2"></td></tr>
-<tr><td>3차 수량 (50%)</td><td class="value" id="q3"></td></tr>
+<tr><td>1차 익절가</td><td class="value" id="tp1"></td></tr>
 </table>
 </div>
 
@@ -111,52 +66,48 @@ td{
 <script>
 function calc(){
 
-const side = document.getElementById("side").value;
+const side = sideV = document.getElementById("side").value;
 const base = +document.getElementById("base").value;
-const capital = +document.getElementById("capital").value;
+const cap = +document.getElementById("capital").value;
 const ratio = +document.getElementById("ratio").value;
 const gap = +document.getElementById("gap").value;
 const lev = +document.getElementById("lev").value;
 
-const seedUse = capital * ratio;
+const seed = cap * ratio;
+
+// 40 / 60 비중
+const w1 = 0.4;
+const w2 = 0.6;
 
 let p1 = base;
 let p2 = side==="LONG" ? base-gap : base+gap;
-let p3 = side==="LONG" ? base-gap*2 : base+gap*2;
 
-const w = [0.2,0.3,0.5];
-
-const avg = p1*w[0] + p2*w[1] + p3*w[2];
-
-const sl = side==="LONG"
-  ? avg * (1-0.003)
-  : avg * (1+0.003);
-
-const s1 = seedUse*w[0];
-const s2 = seedUse*w[1];
-const s3 = seedUse*w[2];
+const s1 = seed*w1;
+const s2 = seed*w2;
 
 const q1 = (s1*lev)/p1;
 const q2 = (s2*lev)/p2;
-const q3 = (s3*lev)/p3;
 
-const qty = q1+q2+q3;
+const qt = q1+q2;
+const avg = (p1*q1 + p2*q2)/qt;
 
-out("seedUse", seedUse);
-out("p1", p1);
-out("p2", p2);
-out("p3", p3);
-out("avg", avg);
-out("sl", sl);
-out("qty", qty);
-out("q1", q1);
-out("q2", q2);
-out("q3", q3);
+const sl = side==="LONG" ? avg*0.997 : avg*1.003;
+const tp1 = side==="LONG" ? avg*1.014 : avg*0.986;
+
+out("seed",seed);
+out("p1",p1);
+out("p2",p2);
+out("q1",q1);
+out("q2",q2);
+out("qt",qt);
+out("avg",avg);
+out("sl",sl);
+out("tp1",tp1);
 }
 
-function out(id,val){
+function out(id,v){
 document.getElementById(id).innerText =
-Number(val).toLocaleString(undefined,{maximumFractionDigits:6});
+Number(v).toLocaleString(undefined,{maximumFractionDigits:6});
 }
 
 calc();
