@@ -7,7 +7,7 @@
 <style>
 body{
   margin:0;
-  background:#020617;
+  background:#0b1220;
   color:#e5e7eb;
   font-family:system-ui;
 }
@@ -30,33 +30,30 @@ input,select,button{
   width:100%;
   padding:8px;
   margin-top:4px;
-  border-radius:10px;
+  border-radius:8px;
   border:1px solid #374151;
   background:#020617;
   color:#e5e7eb;
 }
 button{
   margin-top:12px;
-  background:linear-gradient(135deg,#22c55e,#0ea5e9);
   font-weight:700;
+  background:linear-gradient(135deg,#22c55e,#0ea5e9);
+  border:none;
 }
 table{
   width:100%;
-  border-collapse:collapse;
   margin-top:10px;
-  font-size:12px;
+  font-size:13px;
+  border-collapse:collapse;
 }
-th,td{
-  border:1px solid #1f2937;
+td{
   padding:6px;
+  border-bottom:1px solid #1f2937;
+}
+.value{
   text-align:right;
-}
-th:first-child,td:first-child{
-  text-align:center;
-}
-th{
-  background:#0b1120;
-  color:#9ca3af;
+  font-weight:700;
 }
 </style>
 </head>
@@ -65,117 +62,104 @@ th{
 <div class="app">
 
 <div class="card">
-  <label>기준 매수가</label>
-  <input id="inputEntry" type="number" value="90000">
-
-  <label>포지션</label>
-  <select id="inputSide">
-    <option value="long">롱 (LONG)</option>
-    <option value="short">숏 (SHORT)</option>
+  <label>포지션 방향</label>
+  <select id="side">
+    <option value="LONG">LONG</option>
+    <option value="SHORT">SHORT</option>
   </select>
 
+  <label>기준 매수가</label>
+  <input id="base" type="number" value="85117">
+
+  <label>전체 시드 (USDT)</label>
+  <input id="capital" type="number" value="3782">
+
+  <label>사용 비율 (예: 0.4)</label>
+  <input id="ratio" type="number" step="0.01" value="0.4">
+
   <label>분할 간격</label>
-  <input id="inputInterval" type="number" value="150">
-
-  <label>손절 %</label>
-  <input id="inputStop" type="number" value="0.3">
-
-  <label>전체 시드</label>
-  <input id="inputTotalSeed" type="number" value="3782">
-
-  <label>거래 시드 비율</label>
-  <input id="inputTradeRatio" type="number" value="0.4">
+  <input id="gap" type="number" value="150">
 
   <label>레버리지</label>
-  <input id="inputLeverage" type="number" value="10">
+  <input id="lev" type="number" value="10">
 
-  <label>분할 비중 (합계 1)</label>
-  <input id="inputSplit" value="0.2,0.3,0.5">
-
-  <label>익절 % (1,2,3차)</label>
-  <input id="inputTp" value="0.7,1.2,1.8">
-
-  <button onclick="calculate()">계산하기</button>
+  <button onclick="calc()">계산</button>
 </div>
 
-<div class="card" id="resultBox" style="display:none">
-  <div id="summaryText"></div>
+<div class="card">
+<table>
+<tr><td>사용 시드</td><td class="value" id="seedUse"></td></tr>
+<tr><td>1차 가격</td><td class="value" id="p1"></td></tr>
+<tr><td>2차 가격</td><td class="value" id="p2"></td></tr>
+<tr><td>3차 가격</td><td class="value" id="p3"></td></tr>
+<tr><td>가중 평균가</td><td class="value" id="avg"></td></tr>
+<tr><td>손절가 (0.3%)</td><td class="value" id="sl"></td></tr>
+<tr><td>총 수량</td><td class="value" id="qty"></td></tr>
+</table>
+</div>
 
-  <table id="avgTable"></table>
-  <table id="buyTable"></table>
-  <table id="sellTable"></table>
+<div class="card">
+<table>
+<tr><td>1차 수량 (20%)</td><td class="value" id="q1"></td></tr>
+<tr><td>2차 수량 (30%)</td><td class="value" id="q2"></td></tr>
+<tr><td>3차 수량 (50%)</td><td class="value" id="q3"></td></tr>
+</table>
 </div>
 
 </div>
 
 <script>
-function calculate(){
+function calc(){
 
-  const entryPrice = Number(document.getElementById("inputEntry").value);
-  const side = document.getElementById("inputSide").value;
-  const interval = Number(document.getElementById("inputInterval").value);
-  const stopPct = Number(document.getElementById("inputStop").value) / 100;
-  const totalSeed = Number(document.getElementById("inputTotalSeed").value);
-  const tradeRatio = Number(document.getElementById("inputTradeRatio").value);
-  const leverage = Number(document.getElementById("inputLeverage").value);
+const side = document.getElementById("side").value;
+const base = +document.getElementById("base").value;
+const capital = +document.getElementById("capital").value;
+const ratio = +document.getElementById("ratio").value;
+const gap = +document.getElementById("gap").value;
+const lev = +document.getElementById("lev").value;
 
-  const split = document.getElementById("inputSplit").value.split(",").map(Number);
-  const tpPct = document.getElementById("inputTp").value.split(",").map(v=>Number(v)/100);
+const seedUse = capital * ratio;
 
-  const tradeSeed = totalSeed * tradeRatio;
+let p1 = base;
+let p2 = side==="LONG" ? base-gap : base+gap;
+let p3 = side==="LONG" ? base-gap*2 : base+gap*2;
 
-  const prices = [
-    entryPrice,
-    side==="long" ? entryPrice-interval : entryPrice+interval,
-    side==="long" ? entryPrice-interval*2 : entryPrice+interval*2
-  ];
+const w = [0.2,0.3,0.5];
 
-  const margin = split.map(r=>tradeSeed*r);
-  const qty = prices.map((p,i)=>(margin[i]*leverage)/p);
-  const totalQty = qty.reduce((a,b)=>a+b,0);
+const avg = p1*w[0] + p2*w[1] + p3*w[2];
 
-  const avgPrice = (tradeSeed*leverage)/totalQty;
-  const stopPrice = side==="long"
-    ? avgPrice*(1-stopPct)
-    : avgPrice*(1+stopPct);
+const sl = side==="LONG"
+  ? avg * (1-0.003)
+  : avg * (1+0.003);
 
-  const tpPrices = tpPct.map(p=>
-    side==="long" ? avgPrice*(1+p) : avgPrice*(1-p)
-  );
+const s1 = seedUse*w[0];
+const s2 = seedUse*w[1];
+const s3 = seedUse*w[2];
 
-  document.getElementById("summaryText").innerText =
-    `거래 시드 ${tradeSeed.toFixed(2)} USDT / 레버리지 x${leverage}
-     · 총 수량 ${totalQty.toFixed(6)}`;
+const q1 = (s1*lev)/p1;
+const q2 = (s2*lev)/p2;
+const q3 = (s3*lev)/p3;
 
-  document.getElementById("avgTable").innerHTML = `
-    <tr><th>항목</th><th>가격</th></tr>
-    <tr><td>평균가</td><td>${avgPrice.toFixed(2)}</td></tr>
-    <tr><td>손절가</td><td>${stopPrice.toFixed(2)}</td></tr>
-  `;
+const qty = q1+q2+q3;
 
-  document.getElementById("buyTable").innerHTML = `
-    <tr><th>차수</th><th>가격</th><th>증거금</th><th>수량</th></tr>
-    ${prices.map((p,i)=>`
-      <tr>
-        <td>${i+1}</td>
-        <td>${p.toFixed(2)}</td>
-        <td>${margin[i].toFixed(2)}</td>
-        <td>${qty[i].toFixed(6)}</td>
-      </tr>`).join("")}
-  `;
-
-  document.getElementById("sellTable").innerHTML = `
-    <tr><th>차수</th><th>익절가</th><th>매도수량</th></tr>
-    ${tpPrices.map((p,i)=>`
-      <tr>
-        <td>${i+1}</td>
-        <td>${p.toFixed(2)}</td>
-        <td>${(totalQty*[0.3,0.4,0.3][i]).toFixed(6)}</td>
-      </tr>`).join("")}
-  `;
-
-  document.getElementById("resultBox").style.display="block";
+out("seedUse", seedUse);
+out("p1", p1);
+out("p2", p2);
+out("p3", p3);
+out("avg", avg);
+out("sl", sl);
+out("qty", qty);
+out("q1", q1);
+out("q2", q2);
+out("q3", q3);
 }
+
+function out(id,val){
+document.getElementById(id).innerText =
+Number(val).toLocaleString(undefined,{maximumFractionDigits:6});
+}
+
+calc();
 </script>
 
 </body>
